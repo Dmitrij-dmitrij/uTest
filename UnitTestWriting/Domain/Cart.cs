@@ -46,7 +46,7 @@ public sealed class Cart
     /// <param name="purchasedAt">Дата покупки</param>
     public int GetFullDiscount(DateTime purchasedAt)
     {
-        var discount = Discount ?? 0 + PromoCode?.Discount ?? 0;
+        var discount = (Discount ?? 0) + (PromoCode?.Discount ?? 0);
 
         var birthDate = Customer.BirthDate;
         var birthDateDiscount = purchasedAt.Day == birthDate.Day && purchasedAt.Month == birthDate.Month ? 5 : 0;
