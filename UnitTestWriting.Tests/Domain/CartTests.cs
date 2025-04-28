@@ -2,6 +2,7 @@ using UnitTestWriting.Domain;
 using Xunit;
 using NUnit;
 using NUnit.Framework;
+using System.Xml.Linq;
 
 
 namespace UnitTestWriting.Tests.Domain
@@ -128,6 +129,104 @@ namespace UnitTestWriting.Tests.Domain
             // Assert
             Xunit.Assert.Equal(fullDiscount, 5);
         }
+
+        /// <summary>
+        /// 1. Корзина пуста, скидка = 10. Результат - 0.
+        /// </summary>
+        [Test]
+        public void GetFullPrice_EmptyCart_Return0()
+        {
+            // Arrange
+            var cart = new Cart(new User()
+            {   
+            Name = "Person",
+                BirthDate = new DateTime(2025, 01, 01),
+                Premium = false
+            });
+
+            // Act
+            var fullPrice = cart.GetFullPrice(DateTime.Now);
+
+        // Assert
+        Xunit.Assert.Equal(0, fullPrice);
+        }
+        
+        [Test]
+        /// <summary>
+        /// 2. В корзина: 2шт товар1 за 5р, 1шт товар2 за 11р, 1шт товар3 за 0р, скидка = 0. Результат - 21.
+        /// </summary> 
+        public void GetFullPrice_3ProductsNoDiscount_Return21()
+        {
+            // Arrange
+            var cart = new Cart(new User()
+            {
+                Name = "Person",
+                BirthDate = new DateTime(2025, 01, 01),
+                Premium = false
+            });
+
+            // Act            
+            cart.AddProduct(new Product() { Id= Guid.NewGuid() , Name = "Product1", Price = 5 }, 2);
+            cart.AddProduct(new Product() { Id= Guid.NewGuid(), Name = "Product2", Price = 11 }, 1);
+            cart.AddProduct(new Product() { Id= Guid.NewGuid(), Name = "Product3", Price = 0 }, 1);
+
+            // Act
+            var fullPrice = cart.GetFullPrice(DateTime.Now);
+
+            // Assert
+            Xunit.Assert.Equal(fullPrice, 21);
+        }
+
+        [Test]
+        /// <summary>
+        /// 3. В корзина: 2шт товар1 за 5р, 1шт товар2 за 11р, скидка = 10. Результат - 18,9.
+        /// </summary>
+        public void GetFullPrice_2ProductsDiscount10_Return18()
+        {
+            // Arrange
+            var cart = new Cart(new User()
+            {
+                Name = "Person",
+                BirthDate = new DateTime(2025, 01, 01),
+                Premium = false
+            });
+            // Act           
+            cart.AddProduct(new Product() { Id = Guid.NewGuid(), Name = "Product1", Price = 5 }, 2);
+            cart.AddProduct(new Product() { Id = Guid.NewGuid(), Name = "Product2", Price = 11 }, 1);
+            cart.Discount = 10;
+
+            // Act
+            var fullPrice = cart.GetFullPrice(DateTime.Now);
+
+            // Assert
+            Xunit.Assert.Equal(fullPrice, 18);
+        }
+
+        [Test]
+        /// <summary>
+        /// 4. В корзина: 3шт товар1 за 12р, скидка = 0. Результат - 36.*/
+        /// </summary>
+        public void GetFullPrice_ProductNoDiscount_Return36()
+        {
+            // Arrange
+            var cart = new Cart(new User()
+            {
+                Name = "Person",
+                BirthDate = new DateTime(2025, 01, 01),
+                Premium = false
+            });
+
+            // Act            
+            cart.AddProduct(new Product() { Id = Guid.NewGuid(), Name = "Product1", Price = 12 }, 3);
+            
+            // Act
+            var fullPrice = cart.GetFullPrice(DateTime.Now);
+
+            // Assert
+            Xunit.Assert.Equal(fullPrice, 36);
+        }
+
+
 
     }
 }

@@ -69,8 +69,8 @@ public sealed class Cart
 
         if (discount == 0)
             return price;
-
-        return price * discount / 100;
+        
+        return price * (100 - discount) / 100;
     }
 
     /// <summary>
