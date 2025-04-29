@@ -87,6 +87,9 @@ public sealed class Cart
         {
             var alreadyAdded = _products.Single(p => p.Product.Id == product.Id);
             alreadyAdded.Amount += amount;
+            var _prod = _products.FindAll(p => p.Product.Id != alreadyAdded.Product.Id);
+            _prod.Add(alreadyAdded);           
+            _products = _prod;            
         }
         else
         {

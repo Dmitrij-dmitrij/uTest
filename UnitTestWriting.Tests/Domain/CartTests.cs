@@ -170,7 +170,6 @@ namespace UnitTestWriting.Tests.Domain
             cart.AddProduct(new Product() { Id= Guid.NewGuid(), Name = "Product2", Price = 11 }, 1);
             cart.AddProduct(new Product() { Id= Guid.NewGuid(), Name = "Product3", Price = 0 }, 1);
 
-            // Act
             var fullPrice = cart.GetFullPrice(DateTime.Now);
 
             // Assert
@@ -194,8 +193,7 @@ namespace UnitTestWriting.Tests.Domain
             cart.AddProduct(new Product() { Id = Guid.NewGuid(), Name = "Product1", Price = 5 }, 2);
             cart.AddProduct(new Product() { Id = Guid.NewGuid(), Name = "Product2", Price = 11 }, 1);
             cart.Discount = 10;
-
-            // Act
+                       
             var fullPrice = cart.GetFullPrice(DateTime.Now);
 
             // Assert
@@ -218,15 +216,92 @@ namespace UnitTestWriting.Tests.Domain
 
             // Act            
             cart.AddProduct(new Product() { Id = Guid.NewGuid(), Name = "Product1", Price = 12 }, 3);
-            
-            // Act
+                        
             var fullPrice = cart.GetFullPrice(DateTime.Now);
 
             // Assert
             Xunit.Assert.Equal(fullPrice, 36);
         }
 
+        /// <summary>
+        /// 1. Добавлен 0 шт товар1.Результат - исключение ArgumentOutOfRangeException.
+        /// </summary>
+        [Test]
+        public void AddProduct_Add0Product_ThrowArgumentOutOfRangeException()
+        {
+            // Arrange
+            var cart = new Cart(new User()
+            {
+                Name = "Person",
+                BirthDate = new DateTime(2025, 01, 01),
+                Premium = false
+            });
+            var amount = 0;
 
+            // Act            
+            var actualException = Xunit.Assert.Throws<ArgumentOutOfRangeException>(() => 
+                cart.AddProduct(new Product() { Id = Guid.NewGuid(), Name = "Product1", Price = 12 }, amount));
+            
+            var expectedException = new ArgumentOutOfRangeException(nameof(amount));
+            
+
+            // Assert
+            Xunit.Assert.Equal(actualException!.Message, expectedException.Message);
+        }
+
+        
+        /*AddProduct.
+2. Добавлена 1 шт товар2. Результат - в корзине 1шт товар2.
+3. Добавлена 1 шт товар2. Результат - в корзине 2шт товар2.*/
+        [Test]
+        public void AddProduct_AddSameProduct_ReturnAmountProduct()
+        {
+            // Arrange
+            var cart = new Cart(new User()
+            {
+                Name = "Person",
+                BirthDate = new DateTime(2025, 01, 01),
+                Premium = false
+            });
+
+            var product = new Product() { Id = Guid.NewGuid(), Name = "Product1", Price = 12 };
+            // Act            
+            cart.AddProduct(product, 3);
+            cart.AddProduct(product, 5);
+
+            // Assert
+            (Product Product, int Amount)[] products = cart.Products;
+
+            var cnt = products.Sum(x =>  x.Amount);            
+            
+            Xunit.Assert.Equal(cnt, 8);
+        }
+        [Test]
+        public void AddProduct_AddDiferendProducts_ReturnAmountProducts()
+        {
+            // Arrange
+            var cart = new Cart(new User()
+            {
+                Name = "Person",
+                BirthDate = new DateTime(2025, 01, 01),
+                Premium = false
+            });
+
+            var product1 = new Product() { Id = Guid.NewGuid(), Name = "Product1", Price = 12 };
+            var product2 = new Product() { Id = Guid.NewGuid(), Name = "Product2", Price = 120 };
+            // Act            
+            cart.AddProduct(product1, 3);
+            cart.AddProduct(product2, 5);
+
+            // Assert
+            (Product Product, int Amount)[] products = cart.Products;
+
+            var cnt1 = products.First(x => x.Product.Id == product1.Id ).Amount;
+            var cnt2 = products.First(x => x.Product.Id == product2.Id).Amount;
+
+            Xunit.Assert.Equal(cnt1, 3);
+            Xunit.Assert.Equal(cnt2, 5);
+        }
 
     }
 }
