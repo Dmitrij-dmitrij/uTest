@@ -126,7 +126,7 @@ public sealed class Cart
         if (PromoCode is not null)
             throw new Exception("Промокод уже применён");
 
-        var fullDiscount = Discount ?? 0 + promoCode.Discount;
+        var fullDiscount = (Discount ?? 0) + promoCode.Discount;
 
         if (fullDiscount >= 100)
             throw new ArgumentException("Общая скидка не может быть больше 100%");

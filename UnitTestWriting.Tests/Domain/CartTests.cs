@@ -3,6 +3,7 @@ using Xunit;
 using NUnit;
 using NUnit.Framework;
 using System.Xml.Linq;
+using System.ComponentModel;
 
 
 namespace UnitTestWriting.Tests.Domain
@@ -92,7 +93,8 @@ namespace UnitTestWriting.Tests.Domain
         }
         
         [TestCase(4,6,15)]
-        [TestCase(0, 15, 20)]        
+        [TestCase(0, 15, 20)]
+        [TestCase(90, 6, 96)]
         public void GetFullDiscount_BirthDayNoPremiumUser_ReturnDiscount(int discount, int coupon, int expectedResult)
         {
             // Arrange
@@ -248,11 +250,7 @@ namespace UnitTestWriting.Tests.Domain
             // Assert
             Xunit.Assert.Equal(actualException!.Message, expectedException.Message);
         }
-
-        
-        /*AddProduct.
-2. Добавлена 1 шт товар2. Результат - в корзине 1шт товар2.
-3. Добавлена 1 шт товар2. Результат - в корзине 2шт товар2.*/
+                        
         [Test]
         public void AddProduct_AddSameProduct_ReturnAmountProduct()
         {
@@ -303,5 +301,190 @@ namespace UnitTestWriting.Tests.Domain
             Xunit.Assert.Equal(cnt2, 5);
         }
 
+        [Test]
+        public void ApplyDiscount_ApplyDiscountTwice_ThrowException()
+        {
+            // Arrange
+            var cart = new Cart(new User()
+            {
+                Name = "Person",
+                BirthDate = new DateTime(2025, 01, 01),
+                Premium = false                
+            });
+            cart.ApplyDiscount(10);
+
+            // Act            
+            var actualException = Xunit.Assert.Throws<Exception> (() =>
+               cart.ApplyDiscount(15));
+            var expectedException = new Exception("Скидка уже применена");
+
+            // Assert
+            Xunit.Assert.Equal(actualException.Message, expectedException.Message);
+        }
+
+        [Test]
+        public void ApplyDiscount_TooMuchDiscount_ThrowArgumentException()
+        {
+            // Arrange
+            var cart = new Cart(new User()
+            {
+                Name = "Person",
+                BirthDate = new DateTime(2025, 01, 01),
+                Premium = true
+            });
+            
+            cart.ApplyPromo(new PromoCode(90, "code", TimeSpan.FromDays(5)));
+            //-------------------------------
+            // Act            
+            var actualException = Xunit.Assert.Throws<ArgumentException>(() =>
+               cart.ApplyDiscount(15));
+            var expectedException = new ArgumentException("Общая скидка не может быть больше 100%");
+
+            // Assert
+            Xunit.Assert.Equal(actualException.Message, expectedException.Message);
+        }
+
+        /// <summary>
+        /// 2. Скидка = 105%. Результат - исключение.        
+        /// 4. Скидка = 100%. Результат - исключение.
+        /// 5. Скидка = 0%. Результат - исключение.         
+        /// </summary>
+        [TestCase(105)]
+        [TestCase(100)]       
+        [TestCase(0)]
+        public void ApplyDiscount_Discount_ThrowException(int discount)
+        {
+            // Arrange
+            var cart = new Cart(new User()
+            {
+                Name = "Person",
+                BirthDate = new DateTime(2025, 01, 01),
+                Premium = false
+            });            
+            cart.ApplyPromo(new PromoCode(5, "code", TimeSpan.FromDays(5)));
+
+            // Act            
+            var actualException = Xunit.Assert.Throws<ArgumentOutOfRangeException>(() =>
+               cart.ApplyDiscount(discount));
+            var expectedException = new ArgumentOutOfRangeException(nameof(discount));
+
+            // Assert
+            Xunit.Assert.Equal(actualException.Message , expectedException.Message);
+        }
+        /// <summary>
+        /// 3. Скидка = 10, купон = 20. Результат - 30.
+        /// 7. Скидка = 70%, купон = 0. Результат - 70. 
+        /// </summary>
+        [TestCase(10, 20, 30)]
+        [TestCase(70, 0, 70)]        
+        public void ApplyDiscount_DiscountCoupon_ReturnSum(int discount, int coupon, int expectedDiscount )
+        {
+            // Arrange
+            var cart = new Cart(new User()
+            {
+                Name = "Person",
+                BirthDate = new DateTime(2025, 01, 01),
+                Premium = false
+            });
+            if (coupon != 0)
+                cart.ApplyPromo(new PromoCode(coupon, "code", TimeSpan.FromDays(5)));
+
+            // Act            
+            cart.ApplyDiscount(discount);
+            
+            // Assert
+            Xunit.Assert.Equal(cart.GetFullDiscount(DateTime.Now) , expectedDiscount);
+        }
+        
+        [Test]
+        public void ApplyPromo_ApplyPromoTwice_ThrowException()
+        {
+            // Arrange
+            var cart = new Cart(new User()
+            {
+                Name = "Person",
+                BirthDate = new DateTime(2025, 01, 01),
+                Premium = false
+            });
+            var newPromo = new PromoCode(5, "code", TimeSpan.FromDays(5));
+            cart.ApplyPromo(newPromo);
+
+            // Act            
+            var actualException = Xunit.Assert.Throws<Exception>(() =>
+               cart.ApplyPromo(newPromo));
+            var expectedException = new Exception("Промокод уже применён");
+
+            // Assert
+            Xunit.Assert.Equal(actualException.Message, expectedException.Message);
+        }
+
+        /// <summary>
+        /// 2. Скидка = 10, купон = 20. Результат - купон на 20.
+        /// </summary>        
+        [Test]        
+        public void ApplyPromo_DiscountCoupon_ReturnSum()
+        {
+            // Arrange
+            var cart = new Cart(new User()
+            {
+                Name = "Person",
+                BirthDate = new DateTime(2025, 01, 01),
+                Premium = false
+            });
+            cart.ApplyPromo(new PromoCode(10, "code", TimeSpan.FromDays(5)));
+
+            // Act            
+            cart.ApplyDiscount(15);
+
+            // Assert
+            Xunit.Assert.Equal(cart.PromoCode.Discount , 10);
+        }
+        
+        /// <summary>
+        /// 3. Скидка = 70%, купон = 30. Результат - исключение. 
+        /// </summary>
+        [Test]
+        public void ApplyPromo_MaxDiscountCoupon_ThrowArgumentException()
+        {
+            // Arrange
+            var cart = new Cart(new User()
+            {
+                Name = "Person",
+                BirthDate = new DateTime(2025, 01, 01),
+                Premium = false
+            });
+            
+            cart.ApplyDiscount(70);
+            // Act                        
+            var actualException = Xunit.Assert.Throws<ArgumentException>(() =>
+               cart.ApplyPromo(new PromoCode(30, "code", TimeSpan.FromDays(5))));
+            var expectedException = new ArgumentException("Общая скидка не может быть больше 100%");
+
+            // Assert
+            Xunit.Assert.Equal(actualException.Message, expectedException.Message);
+        }
+        /// <summary>
+        ///Купон для обычного покупателя.Результат - исключение.
+        /// </summary>
+        [Test]
+        public void ApplyPromo_PremiumCouponNoPremiumCustomer_ThrowException()
+        {
+            // Arrange
+            var cart = new Cart(new User()
+            {
+                Name = "Person",
+                BirthDate = new DateTime(2025, 01, 01),
+                Premium = false
+            });
+                        
+            // Act                        
+            var actualException = Xunit.Assert.Throws<Exception>(() =>
+               cart.ApplyPromo(new PromoCode(51, "code", TimeSpan.FromDays(5))));
+            var expectedException = new Exception("Промокод только для пользователей премиальных аккаунтов");
+
+            // Assert
+            Xunit.Assert.Equal(actualException.Message, expectedException.Message);
+        }
+        // 115, 55 не покрыты
     }
 }
