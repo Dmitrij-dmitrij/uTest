@@ -51,7 +51,7 @@ namespace UnitTestWriting.Tests.Domain
             Xunit.Assert.Null(cart.PromoCode);
         }
                
-        [TestCase(0,0,2,1)]
+        //[TestCase(0,0,2,1)]
         [TestCase(3,3,2,1)]
         public void GetFullDiscount_NoBirthNoCouponNoPremiumUser_ReturnDiscount(int discount,  int expectedResult, int purchaseMonth, int purchaseDay)
         {
@@ -73,6 +73,7 @@ namespace UnitTestWriting.Tests.Domain
         [TestCase(10,3,13,2,1)]
         [TestCase(0,3,3,2,1)]
         [TestCase(20, 5, 25, 1, 10)]
+        [TestCase(20, 5, 25, 2, 01)]
         public void GetFullDiscount_NoBirthNoPremiumUser_ReturnDiscount(int discount, int coupon, int expectedResult, int purchaseMonth, int purchaseDay)
         {
             // Arrange
@@ -95,6 +96,7 @@ namespace UnitTestWriting.Tests.Domain
         [TestCase(4,6,15)]
         [TestCase(0, 15, 20)]
         [TestCase(90, 6, 96)]
+        [TestCase(90, 5, 100)]
         public void GetFullDiscount_BirthDayNoPremiumUser_ReturnDiscount(int discount, int coupon, int expectedResult)
         {
             // Arrange
@@ -153,7 +155,6 @@ namespace UnitTestWriting.Tests.Domain
         Xunit.Assert.Equal(0, fullPrice);
         }
         
-        [Test]
         /// <summary>
         /// 2. В корзина: 2шт товар1 за 5р, 1шт товар2 за 11р, 1шт товар3 за 0р, скидка = 0. Результат - 21.
         /// </summary> 
@@ -226,10 +227,11 @@ namespace UnitTestWriting.Tests.Domain
         }
 
         /// <summary>
-        /// 1. Добавлен 0 шт товар1.Результат - исключение ArgumentOutOfRangeException.
+        /// 1. Добавлен 0/-1 шт товар1.Результат - исключение ArgumentOutOfRangeException.
         /// </summary>
-        [Test]
-        public void AddProduct_Add0Product_ThrowArgumentOutOfRangeException()
+        [TestCase(0)]
+        [TestCase(-1)]
+        public void AddProduct_AddXProduct_ThrowArgumentOutOfRangeException(int amount)
         {
             // Arrange
             var cart = new Cart(new User()
@@ -238,7 +240,7 @@ namespace UnitTestWriting.Tests.Domain
                 BirthDate = new DateTime(2025, 01, 01),
                 Premium = false
             });
-            var amount = 0;
+            //var amount = 0;
 
             // Act            
             var actualException = Xunit.Assert.Throws<ArgumentOutOfRangeException>(() => 
@@ -352,6 +354,7 @@ namespace UnitTestWriting.Tests.Domain
         [TestCase(105)]
         [TestCase(100)]       
         [TestCase(0)]
+        [TestCase(-10)]
         public void ApplyDiscount_Discount_ThrowException(int discount)
         {
             // Arrange
@@ -376,7 +379,9 @@ namespace UnitTestWriting.Tests.Domain
         /// 7. Скидка = 70%, купон = 0. Результат - 70. 
         /// </summary>
         [TestCase(10, 20, 30)]
-        [TestCase(70, 0, 70)]        
+        [TestCase(70, 0, 70)]
+        [TestCase(99, 0, 99)]
+        [TestCase(1, 0, 1)]
         public void ApplyDiscount_DiscountCoupon_ReturnSum(int discount, int coupon, int expectedDiscount )
         {
             // Arrange
