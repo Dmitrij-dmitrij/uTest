@@ -46,7 +46,7 @@ public sealed class Cart
     /// <param name="purchasedAt">Дата покупки</param>
     public int GetFullDiscount(DateTime purchasedAt)
     {
-        var discount = Discount ?? 0 + PromoCode?.Discount ?? 0;
+        var discount = (Discount ?? 0) + (PromoCode?.Discount ?? 0);
 
         var birthDate = Customer.BirthDate;
         var birthDateDiscount = purchasedAt.Day == birthDate.Day && purchasedAt.Month == birthDate.Month ? 5 : 0;
@@ -69,8 +69,8 @@ public sealed class Cart
 
         if (discount == 0)
             return price;
-
-        return price * discount / 100;
+        
+        return price * (100 - discount) / 100;
     }
 
     /// <summary>
@@ -87,6 +87,9 @@ public sealed class Cart
         {
             var alreadyAdded = _products.Single(p => p.Product.Id == product.Id);
             alreadyAdded.Amount += amount;
+            var _prod = _products.FindAll(p => p.Product.Id != alreadyAdded.Product.Id);
+            _prod.Add(alreadyAdded);           
+            _products = _prod;            
         }
         else
         {
@@ -123,7 +126,7 @@ public sealed class Cart
         if (PromoCode is not null)
             throw new Exception("Промокод уже применён");
 
-        var fullDiscount = Discount ?? 0 + promoCode.Discount;
+        var fullDiscount = (Discount ?? 0) + promoCode.Discount;
 
         if (fullDiscount >= 100)
             throw new ArgumentException("Общая скидка не может быть больше 100%");
